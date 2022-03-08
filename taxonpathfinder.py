@@ -42,11 +42,8 @@ Usage:
 
 known error:
     1. use mispelled as well
-    
-    
-    1. reverse list is longer than original list
-    2. may not find all species names
-
+    2. can directly read database from online
+    3. use argparse to determine whether input is taxid or taxon(right now just taxon)
  """
 
 #import packages
@@ -101,6 +98,9 @@ species_dict={}
 parent_check=False
 first=False
 count=0
+lineage=[]
+input_species='Homo sapiens'
+input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
 # opening inputfile and outputfile
 inputted = open(inputfile, 'r')
 output = open(outputfile, 'w')
@@ -108,10 +108,6 @@ output = open(outputfile, 'w')
 for n,line in enumerate(inputted):
     #print(line)
     taxonomy.append(line.strip())
-    # if re.search('^ID\s+:\s207598', line):#so weird
-    #     print("hey")
-    #     # break
-
     if re.search('RANK\s+:\sspecies', line):  # finds line if fasta header
         # print(line)
         rank_s=re.search('RANK\s+:\s(species)', line).group(1)
@@ -127,11 +123,12 @@ for n,line in enumerate(inputted):
                 #may be able to make last character not be white space/however it did find homo sapiens, try and break
                 #also updated to other organisms
                 #this was modified, not sure if still works (added$)
-                if re.search('SCIENTIFIC NAME\s+:\sHomo\ssapiens$', line):
-                    human=re.search('(SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+)', line.strip()).group(1) 
+                if re.search(input_species_pattern, line):
+                    print(f"found {input_species}")
+                    #test=re.search('(SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+)', line.strip()).group(1) 
                     index=n
-                    print(index)
-                    print(human)
+                    #print(index)
+                    #print(test)
                     #break#break when find first sapiens
                 else:
                     pass
@@ -144,35 +141,9 @@ for n,line in enumerate(inputted):
         pass
 
 
-'''
-[ {
-  "taxId" : "9606",
-  "scientificName" : "Homo sapiens",
-  "commonName" : "human",
-  "formalName" : "true",
-  "rank" : "species",
-  "division" : "HUM",
-  "lineage" : "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini; Catarrhini; Hominidae; Homo; ",
-  "geneticCode" : "1",
-  "mitochondrialGeneticCode" : "2",
-  "submittable" : "true"
-} ]
-'''
-
-#%%
-#temporary location
-json_dict={}
-first_MGC=True
-first_GC=True
-first_rank=True
-first_ID=True
-first_Genebank=True
-lineage=""
-# one_scientific_name=True
-#temporary variable
-index=63207
-output = open(outputfile, 'w')
-
+# #temporary variable
+# index=63207
+# output = open(outputfile, 'w')
 #fix order of this= so it looks good
 while 1:
 # for n in range(0,10):
@@ -181,69 +152,22 @@ while 1:
             # print(taxonomy[index-count])
             break
         #this needs to be updated for other organisms
-        # if one_scientific_name:
-        elif re.search('SCIENTIFIC NAME\s+:\sHomo\ssapiens$', taxonomy[index-count]):
+        elif re.search(input_species_pattern, taxonomy[index-count]):
             #this is repeated from the for loop through the database
             # print(taxonomy[index-count])
+            print(f"found {input_species} at line {index}")
             rank_s=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\d\-\[\]]+)\s([A-Za-z\s\d\-\[\]]+)', taxonomy[index-count]).group(1,2)        
-            species_dict[rank_s[0]]=rank_s[1] 
-            json_dict["scientificName"]=rank_s[0]+' '+rank_s[1]
             count+=1
             #not sure this will work for all searches
-            lineage+=f'{rank_s[0]} {rank_s[1]}; ' 
-            # one_scientific_name=False
-            # else:
-            #     print(taxonomy[index+count])
-            #     count+=1
-        elif first_MGC:
-            if re.search('^MGC ID\s+:\s[\d]+', taxonomy[index-count]): 
-                # print(taxonomy[index-count])
-                MGC=re.search('^MGC ID\s+:\s([\d]+)', taxonomy[index-count]).group(1)
-                json_dict['mitochondrialGeneticCode']=MGC
-                first_MGC=False 
-                count+=1
-            else:
-                # print(taxonomy[index-count])
-                count+=1
-        elif first_GC:
-            if re.search('^GC ID\s+:\s[\d]+', taxonomy[index-count]): 
-                # print(taxonomy[index-count])
-                GC=re.search('^GC ID\s+:\s([\d]+)', taxonomy[index-count]).group(1)
-                json_dict['geneticCode']=GC
-                first_GC=False 
-                count+=1
-            else:
-                # print(taxonomy[index-count])
-                count+=1
-        elif first_rank:
-            if re.search('^RANK\s+:\s[A-Za-z]+', taxonomy[index-count]): 
-                # print(taxonomy[index-count])
-                rank=re.search('^RANK\s+:\s([A-Za-z]+)', taxonomy[index-count]).group(1)
-                json_dict['rank']=rank
-                first_rank=False   
-                count+=1
-            else:
-                # print(taxonomy[index-count])
-                count+=1
+            lineage.append(f'{rank_s[0]} {rank_s[1]}')
         elif re.search('PARENT ID', taxonomy[index-count]):
             # print(taxonomy[index-count])
             parent_id=taxonomy[index-count]
             count+=1
-        elif first_ID:
-            if re.search('^ID', taxonomy[index-count]):
-                # print(taxonomy[index-count])
-                ID=re.search('^ID\s+:\s([\d]+)', taxonomy[index-count]).group(1)
-                json_dict['taxId']=ID
-                first_ID=False
-                count+=1
-            else:
-                # print(taxonomy[index-count])
-                count+=1
         else:
             # print(taxonomy[index-count])
             count+=1
     count=1
-    # one_scientific_name=True
     while 1:
         if '//' in taxonomy[index+count]:
             # print(taxonomy[index+count])
@@ -252,58 +176,37 @@ while 1:
             # print(taxonomy[index+count])
             parent_id=taxonomy[index+count]
             count+=1
-        #why is this needed
-        # elif one_scientific_name:
         elif re.search('^GC ID\s+:\s[\d]+', taxonomy[index-count]): 
             if re.search('^MGC ID\s+:\s[\d]+', taxonomy[index+count+1]): 
                 # print(taxonomy[index-count])
                 name=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\s\d\-\[\]]+)', taxonomy[index+count+2]).group(1)  
-                lineage+=f'{name}; ' 
+                lineage.append(name) 
                 count+=1
             elif re.search('SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+$', taxonomy[index+count+1]):
                 #this is repeated from the for loop through the database
                 # print(taxonomy[index-count])
                 name=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\s\d\-\[\]]+)', taxonomy[index+count+1]).group(1)        
-                lineage+=f'{name}; ' 
+                lineage.append(name) 
                 count+=1
-                # one_scientific_name=False
             else:
                 # print(taxonomy[index+count])
-                count+=1
-        elif first_Genebank:
-            #assuming all names are just letters
-            if re.search('^GENEBANK COMMON NAME\s+:\s[A-Za-z\s]+', taxonomy[index-count]): 
-                # print(taxonomy[index-count])
-                Genebank=re.search('^GENEBANK COMMON NAME\s+:\s([A-Za-z\s]+)', taxonomy[index-count]).group(1)
-                json_dict['CommonName']=Genebank
-                first_Genebank=False
-                count+=1
-            elif re.search('^COMMON NAME\s+:\s[A-Za-z\s]+', taxonomy[index-count]): 
-                # print(taxonomy[index-count])
-                common=re.search('^COMMON NAME\s+:\s([A-Za-z\s]+)', taxonomy[index-count]).group(1)
-                json_dict['CommonName']=common
-                first_Genebank=False 
-                count+=1
-            else:
-                # print(taxonomy[index-count])
                 count+=1
         else:
             # print(taxonomy[index+count])
             count+=1
     count=0
-    # one_scientific_name=True
     ID=re.search('^PARENT ID\s+:\s([\d]+)', parent_id).group(1)
-    print(f'{ID} is the parent ID')
+    # print(f'{ID} is the parent ID')
     ID=f'ID                        : {ID}'
     try:
         index=taxonomy.index(ID)
     except ValueError:
         print("Reached root")
         break
-json_dict["Lineage"]=lineage
+lineage.reverse()
+print(lineage)   
+# print(f'[{json_dict}]', file=output)  
 
-print(json_dict)   
-print(f'[{json_dict}]', file=output)  
 
 inputted.close()  # closing
 output.close()  # closing
