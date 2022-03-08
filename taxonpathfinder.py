@@ -55,7 +55,6 @@ input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
 #functions
 def database_look_up(database=None,species_pattern=None):
     #assigned variables
-    flag=False
     taxonomy=[]
     # opening inputfile
     database = open(database, 'r')
@@ -63,31 +62,13 @@ def database_look_up(database=None,species_pattern=None):
     for n,line in enumerate(database):
         #print(line)
         taxonomy.append(line.strip())
-        if re.search('RANK\s+:\sspecies', line):  # finds line if fasta header
-            # print(line)
-            flag=True
-        elif re.search('SCIENTIFIC NAME', line):
-            if flag:
-                # print(line)
-                #print(f"{rank_s} {line}")
-                if re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\d\-\[\]]+)\s([A-Za-z\s\d\-\[\]]+)', line.strip()):
-                    flag=False
-                    #may be able to make last character not be white space/however it did find homo sapiens, try and break
-                    #also updated to other organisms
-                    #this was modified, not sure if still works (added$)
-                    if re.search(species_pattern, line):
-                        print(f"found {input_species}")
-                        #test=re.search('(SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+)', line.strip()).group(1) 
-                        index=n
-                        print(index)
-                        #print(test)
-                    else:
-                        pass
-                else:
-                    #print(line)
-                    pass
-            else:
-                pass
+        # print(flag)
+        if re.search(species_pattern, line):
+            print(f"found {input_species}")
+            #test=re.search('(SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+)', line.strip()).group(1) 
+            index=n
+            print(index)
+            #print(test)
         else:
             pass
     database.close()  # closing
@@ -195,9 +176,13 @@ else:
     except:
         print("Looking for 2 argument, try again")
         exit()
-database_look_up(inputfile,input_species_pattern)
 
-print(lineage_find(database_look_up(inputfile,input_species_pattern)[0],database_look_up(inputfile,input_species_pattern)[1]))
+#get index and database as lsit
+database_look_up_output=database_look_up(inputfile,input_species_pattern)
+
+#
+lineage_find_output=lineage_find(database_look_up_output[0],database_look_up_output[1])
+print(lineage_find_output)
 
 
 #output.close()  # closing
