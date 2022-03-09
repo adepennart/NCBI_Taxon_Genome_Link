@@ -21,12 +21,10 @@ List of "non standard modules"
     No "non standard modules" are used in the program.
 
 Procedure:
-    1. open input file
-    2. create list of genus and species
-    3. create list of every line
-    4. use user input to getermine species of interest
-    5. find lin genus species list
-    6. pull out genus species
+    1. get database and species of interest from input
+    2. find species of interest in database
+    3. run through database as a list to find parent ids from which to find lineage
+    4. print lineage to output
 
 Usage:
     python mini_tax.dat homo_sapiends.json
@@ -46,11 +44,11 @@ from pathlib import Path
 
 # allows for different file names to be adjusted easily for user
 inputfile = 'taxonomy.dat'
-outputfile = 'homo_sapiens.json'
+#outputfile = 'homo_sapiens.json'
 
 #assigned variables
-input_species='Homo sapiens'
-input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
+#input_species='Homo sapiens'
+#input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
 
 #functions
 def database_look_up(database=None,species_pattern=None):
@@ -71,6 +69,11 @@ def database_look_up(database=None,species_pattern=None):
             #print(test)
         else:
             pass
+    try:
+        print(index)
+    except UnboundLocalError:
+        print("Species not found or mispelled, please try again")
+        exit()
     database.close()  # closing
     return taxonomy, index
 
@@ -166,7 +169,7 @@ elif len(sys.argv) == 2 and not Path(sys.argv[1]).is_file():
 # uses the files specified above in the script
 elif len(sys.argv) == 1:
     inputfile = inputfile
-    outputfile = outputfile
+    # outputfile = outputfile
 
 
 # exits script if unexpected arguments in commandline.
@@ -177,10 +180,15 @@ else:
         print("Looking for 2 argument, try again")
         exit()
 
+#assigned variables
+input_species=input("Input Species of Interest\n")
+#input_species[0]=input_species.capitalize()[0]
+input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
+
 #get index and database as lsit
 database_look_up_output=database_look_up(inputfile,input_species_pattern)
 
-#
+#find lineage
 lineage_find_output=lineage_find(database_look_up_output[0],database_look_up_output[1])
 print(lineage_find_output)
 
