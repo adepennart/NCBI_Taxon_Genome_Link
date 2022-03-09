@@ -27,13 +27,14 @@ Procedure:
     4. print lineage to output
 
 Usage:
-    python mini_tax.dat homo_sapiends.json
+    python taxonpathfinder.py taxonomy.dat homo_sapiends.json
 
 known error:
     1. use mispelled as well
     2. can directly read database from online
     3. use argparse to determine whether input is taxid or taxon(right now just taxon)
     4. only finds species
+    5. does not work with output file request
  """
 
 #import packages
@@ -50,8 +51,25 @@ inputfile = 'taxonomy.dat'
 #input_species='Homo sapiens'
 #input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
 
+#assigned variables
+def input_pattern_generator():
+    inputted=input("Input Species of Interest\n")
+    try:
+        if int(inputted) :
+            input_id = inputted
+            id_flag=True
+    except ValueError:
+        input_species= inputted
+        id_flag=False
+    #input_species[0]=input_species.capitalize()[0]
+    if id_flag:
+        input_pattern=f'^ID\s+:\s{input_id}$'
+    elif not id_flag:
+        input_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
+    return input_pattern, inputted
+
 #functions
-def database_look_up(database=None,species_pattern=None):
+def database_look_up(database=None,input_pattern=None,input_name=None):
     #assigned variables
     taxonomy=[]
     # opening inputfile
@@ -61,8 +79,8 @@ def database_look_up(database=None,species_pattern=None):
         #print(line)
         taxonomy.append(line.strip())
         # print(flag)
-        if re.search(species_pattern, line):
-            print(f"found {input_species}")
+        if re.search(input_pattern, line):
+            print(f"found {input_name}")
             #test=re.search('(SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+)', line.strip()).group(1) 
             index=n
             print(index)
@@ -78,7 +96,7 @@ def database_look_up(database=None,species_pattern=None):
     return taxonomy, index
 
 
-def lineage_find(database_input=None, index=None):
+def lineage_find(database_input=None, index=None,input_pattern=None):
     #assigned variables
     count=0
     lineage=[]
@@ -88,10 +106,10 @@ def lineage_find(database_input=None, index=None):
                 # print(database_input[index-count])
                 break
             #this needs to be updated for other organisms
-            elif re.search(input_species_pattern, database_input[index-count]):
+            elif re.search(input_pattern, database_input[index-count]):
                 #this is repeated from the for loop through the database
                 # print(database_input[index-count])
-                print(f"found {input_species} at line {index}")
+                print(f"found {input_pattern} at line {index}")
                 rank_s=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\d\-\[\]]+)\s([A-Za-z\s\d\-\[\]]+)', database_input[index-count]).group(1,2)        
                 count+=1
                 #not sure this will work for all searches
@@ -180,16 +198,14 @@ else:
         print("Looking for 2 argument, try again")
         exit()
 
-#assigned variables
-input_species=input("Input Species of Interest\n")
-#input_species[0]=input_species.capitalize()[0]
-input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
 
+#get searchable pattern
+input_pattern_generator_output=input_pattern_generator()
 #get index and database as lsit
-database_look_up_output=database_look_up(inputfile,input_species_pattern)
+database_look_up_output=database_look_up(inputfile,input_pattern_generator_output[0],input_pattern_generator_output[1])
 
 #find lineage
-lineage_find_output=lineage_find(database_look_up_output[0],database_look_up_output[1])
+lineage_find_output=lineage_find(database_look_up_output[0],database_look_up_output[1],input_pattern_generator_output[0])
 print(lineage_find_output)
 
 
