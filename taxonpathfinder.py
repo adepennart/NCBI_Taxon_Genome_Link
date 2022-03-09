@@ -6,9 +6,13 @@ Date: March 8th, 2022
 Author: Auguste de Pennart
 
 Description:
-    Finds taxon path from (taxid or) taxon
+    Finds taxon path from taxid or taxon
 
 List of functions:
+    input_pattern_generator:
+        takes user input
+        creates search pattern to search against database
+    
     database_look_up:
         creates database as list
         finds index of species of interest
@@ -24,49 +28,61 @@ Procedure:
     1. get database and species of interest from input
     2. find species of interest in database
     3. run through database as a list to find parent ids from which to find lineage
-    4. print lineage to output
+    4. print lineage to standard output
 
 Usage:
-    python taxonpathfinder.py taxonomy.dat homo_sapiends.json
+    python taxonpathfinder.py taxonomy.dat
 
 known error:
     1. use mispelled as well
     2. can directly read database from online
     3. use argparse to determine whether input is taxid or taxon(right now just taxon)
-    4. only finds species
-    5. does not work with output file request
+    4. does not work with output file request
  """
 
 #import packages
+#----------------------------------------------------------------------------------------
 import re
-import random
 import sys
 from pathlib import Path
 
-# allows for different file names to be adjusted easily for user
+#insert input database here
 inputfile = 'taxonomy.dat'
 #outputfile = 'homo_sapiens.json'
 
-#assigned variables
-#input_species='Homo sapiens'
-#input_species_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
+#defined functions:
+#----------------------------------------------------------------------------------------
 
-#assigned variables
+#input_pattern_generator
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#inputs:
+    #no inputs
+
+
+#use:
+    
+
+#return:
+    #input_pattern:
+        #taxon or 
+    
+
+
 def input_pattern_generator():
-    inputted=input("Input Species of Interest\n")
+    user_input=input("Input Species of Interest\n")
     try:
-        if int(inputted) :
-            input_id = inputted
+        if int(user_input) :
+            input_id = user_input
             id_flag=True
     except ValueError:
-        input_species= inputted
+        input_species= user_input
         id_flag=False
     #input_species[0]=input_species.capitalize()[0]
     if id_flag:
         input_pattern=f'^ID\s+:\s{input_id}$'
     elif not id_flag:
         input_pattern=f'SCIENTIFIC NAME\s+:\s{input_species}$'
-    return input_pattern, inputted
+    return input_pattern, user_input
 
 #functions
 def database_look_up(database=None,input_pattern=None,input_name=None):
@@ -74,7 +90,7 @@ def database_look_up(database=None,input_pattern=None,input_name=None):
     taxonomy=[]
     # opening inputfile
     database = open(database, 'r')
-    #for loop through each line in inputted
+    #for loop through each line in database
     for n,line in enumerate(database):
         #print(line)
         taxonomy.append(line.strip())
@@ -111,10 +127,10 @@ def lineage_find(database_input=None, index=None,input_pattern=None,input_name=N
                 # print(database_input[index-count])
                 print(f"confirmed find of {input_name} at line {index}")
                 if re.search('SCIENTIFIC NAME', input_pattern):
-                    rank_s=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\d\-\[\]]+)\s([A-Za-z\s\d\-\[\]]+)', database_input[index-count]).group(1,2)        
+                    name=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\s\d\-\[\]]+)$', database_input[index-count]).group(1)        
                     count+=1
                     #not sure this will work for all searches
-                    lineage.append(f'{rank_s[0]} {rank_s[1]}')
+                    lineage.append(f'{name}')
                 else:
                     # print(database_input[index-count])
                     count+=1
