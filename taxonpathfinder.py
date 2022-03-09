@@ -80,15 +80,15 @@ def database_look_up(database=None,input_pattern=None,input_name=None):
         taxonomy.append(line.strip())
         # print(flag)
         if re.search(input_pattern, line):
-            print(f"found {input_name}")
             #test=re.search('(SCIENTIFIC NAME\s+:\s[A-Za-z\s\d\-\[\]]+)', line.strip()).group(1) 
             index=n
-            print(index)
+            print(f"found {input_name} at line {index}")
+            # print(index)
             #print(test)
         else:
             pass
     try:
-        print(index)
+        index
     except UnboundLocalError:
         print("Species not found or mispelled, please try again")
         exit()
@@ -96,7 +96,7 @@ def database_look_up(database=None,input_pattern=None,input_name=None):
     return taxonomy, index
 
 
-def lineage_find(database_input=None, index=None,input_pattern=None):
+def lineage_find(database_input=None, index=None,input_pattern=None,input_name=None):
     #assigned variables
     count=0
     lineage=[]
@@ -109,11 +109,16 @@ def lineage_find(database_input=None, index=None,input_pattern=None):
             elif re.search(input_pattern, database_input[index-count]):
                 #this is repeated from the for loop through the database
                 # print(database_input[index-count])
-                print(f"found {input_pattern} at line {index}")
-                rank_s=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\d\-\[\]]+)\s([A-Za-z\s\d\-\[\]]+)', database_input[index-count]).group(1,2)        
-                count+=1
-                #not sure this will work for all searches
-                lineage.append(f'{rank_s[0]} {rank_s[1]}')
+                print(f"confirmed find of {input_name} at line {index}")
+                if re.search('SCIENTIFIC NAME', input_pattern):
+                    rank_s=re.search('SCIENTIFIC NAME\s+:\s([A-Za-z\d\-\[\]]+)\s([A-Za-z\s\d\-\[\]]+)', database_input[index-count]).group(1,2)        
+                    count+=1
+                    #not sure this will work for all searches
+                    lineage.append(f'{rank_s[0]} {rank_s[1]}')
+                else:
+                    # print(database_input[index-count])
+                    count+=1
+                
             elif re.search('PARENT ID', database_input[index-count]):
                 # print(database_input[index-count])
                 parent_id=database_input[index-count]
@@ -205,7 +210,7 @@ input_pattern_generator_output=input_pattern_generator()
 database_look_up_output=database_look_up(inputfile,input_pattern_generator_output[0],input_pattern_generator_output[1])
 
 #find lineage
-lineage_find_output=lineage_find(database_look_up_output[0],database_look_up_output[1],input_pattern_generator_output[0])
+lineage_find_output=lineage_find(database_look_up_output[0],database_look_up_output[1],input_pattern_generator_output[0],input_pattern_generator_output[1])
 print(lineage_find_output)
 
 
