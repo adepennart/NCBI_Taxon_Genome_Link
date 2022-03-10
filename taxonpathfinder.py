@@ -1,58 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Title: taxonpathparser.py
-Date: March 9th, 2022
-Author: Auguste de Pennart
+Created on Thu Mar 10 15:14:12 2022
 
-Description:
-    Finds taxon path from taxid or taxon
-
-List of functions:
-    input_pattern_generator:
-        takes user input
-        creates search pattern to search against database
-    
-    database_look_up:
-        creates database as list
-        finds index of taxa of interest
-
-      lineage_look_up:
-          while loop through list to find parent ids of taxa of interest, all the way to root
-          meanwhile finds each id taxon name as you go up the lineage
-
-List of "non standard modules"
-    No "non standard modules" are used in the program.
-
-Procedure:
-    1. get database and taxa of interest from input
-    2. find taxa of interest in database
-    3. run through database as a list to find parent ids from which to find lineage
-    4. print lineage to standard output
-
-Usage:
-    python taxonpathfinder.py taxonomy.dat
-
-known error:
-    1. use mispelled as well
-    2. can directly read database from online
-    3. use argparse to determine whether input is taxid or taxon(right now just taxon)
-    4. does not work with output file request
-    5. dictionaries should reject bad inputs
- """
+@author: inf-49-2021
+"""
 
 #import packages
 #----------------------------------------------------------------------------------------
 import re
 import sys
 from pathlib import Path
+import entrezpy.efetch.efetcher
+
 
 #input database
 inputfile = 'taxonomy.dat'
 #outputfile = 'homo_sapiens.json'
+email='adepennart@gmail.com'
 
-#defined functions:
-#----------------------------------------------------------------------------------------
 
 #input_pattern_generator
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -74,7 +40,7 @@ inputfile = 'taxonomy.dat'
 def input_pattern_generator():
     #get taxon or taxid from user
     user_input=input("Input taxa or taxid of interest\n")
-    # checks whether user input is taxon or taxid
+    # checks whether user input is taxon or taxid    
     try:
         #checks if user input is an integer
         if int(user_input) :
@@ -89,70 +55,16 @@ def input_pattern_generator():
     #checks whether id_flag was created
     if id_flag:
         #if id_flag raised places input_id in input_pattern 
-        input_pattern=f'^ID\s+:\s{input_id}$'
+        input_pattern={'db' : 'taxonomy', 'id' : [input_id], 'retmode': 'xml'}
     #checks whether id_flag was not created
     elif not id_flag:
+        print('not a taxid, but taxon')
+        exit()
         #if id_flag not raised places input_taxa in input_pattern
         input_pattern=f'SCIENTIFIC NAME\s+:\s{input_taxa}$'
     #function returns both user input and a regex searchable format of user input
     return user_input, input_pattern
 
-
-#database_look_up
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#input variables:
-    #database:
-        #taxonomic database of interest
-    #input_pattern:
-        #taxon or taxid user input in regex searchable format
-    #input_name:
-        #taxon or taxid user input
-        
-#use:
-    #Creates searchable database as form of list.
-    #Finds index/line in database where taxon or taxid is found.
-
-#return:
-    #taxonomy_list:
-        # taxonmic database as a list
-    #index:
-        # index/line where taxon or taxid is found
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-def database_look_up(database=None,input_pattern=None,input_name=None):
-    #empty taxonomy_list variable
-    taxonomy_list=[]
-    # opening databse file
-    database = open(database, 'r')
-    #for loop through each enumerated line in database
-    for n,line in enumerate(database):
-        #print(line) #debugging
-        #adds line of database to taxonomy_list
-        taxonomy_list.append(line.strip())
-        # print(flag) #debugging
-        #searches for taxon or taxid in each line of database
-        if re.search(input_pattern, line):
-            #creates index variable, the line number for the taxon or taxid is on
-            index=n
-            #prints to output that the taxon or taxid and its line number were found
-            print(f"found {input_name} at line {index}")
-            # print(index) #debugging
-        else:
-            pass
-    #checks whether user defined taxon or taxid was found in database
-    try:
-        #if index is a variable, taxon or taxid was found and the script can be continued
-        index
-    #if index is not a variable raises UnboundLocalError flag
-    except UnboundLocalError:
-        #prints to standard output that taxon or taxid inputted was not found in database
-        print("taxa not found or mispelled, please try again")
-        #exits script
-        exit()
-    database.close()  # closing
-    #function returns the taxonomic database as a list and line number for the taxon or taxid 
-    return taxonomy_list, index
 
 #lineage_find
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -328,11 +240,18 @@ else:
         exit()
 
 
+ef = entrezpy.efetch.efetcher.Efetcher('efetcher', email)
+
+# examples= {'db': 'nucleotide', 'id': [5]}
+# examples={'db' : 'taxonomy', 'id' : [1232345], 'retmode': 'xml'}
+# examples2={'db' : 'taxonomy', 'term':'Actinobacteria', 'retmode': 'xml'}
+
+
+a = ef.inquire(examples)
+# a = ef.inquire(examples2)
+
 #get regex searchable pattern for user inputted taxon or taxid
 taxon_and_pattern=input_pattern_generator()
-
-#get database as list and taxon or taxid index
-list_and_index=database_look_up(inputfile,taxon_and_pattern[1],taxon_and_pattern[0])
 
 #find lineage of taxon or taxid 
 lineage=lineage_find(list_and_index[0],list_and_index[1],taxon_and_pattern[1],taxon_and_pattern[0])
@@ -352,5 +271,16 @@ for taxa in lineage:
     
 # print(lineage)
 
+# import entrezpy.conduit
+# c = entrezpy.conduit.Conduit(email)
+# fetch_influenza = c.new_pipeline()
+# sid = fetch_influenza.add_search({'db' : 'nucleotide', 'term' : 'H3N2 [organism] AND HA', 'rettype':'count', 'sort' : 'Date Released', 'mindate': 2000, 'maxdate':2019, 'datetype' : 'pdat'})
+# fid = fetch_influenza.add_fetch({'retmax' : 10, 'retmode' : 'text', 'rettype': 'fasta'}, dependency=sid)
+# c.run(fetch_influenza)
 
-#output.close()  # closing
+# import entrezpy.conduit
+# c = entrezpy.conduit.Conduit(email)
+# fetch_influenza = c.new_pipeline()
+# sid = fetch_influenza.add_search({'db' : 'taxonomy', 'term' : 'Homo sapiens[SCIENTIFICNAME]'})
+# fid = fetch_influenza.add_fetch({ 'retmode' : 'text', 'rettype': 'xml'}, dependency=sid)
+# c.run(fetch_influenza)
