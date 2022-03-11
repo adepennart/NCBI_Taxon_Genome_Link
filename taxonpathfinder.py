@@ -1,22 +1,49 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Mar 10 15:14:12 2022
+Title: taxonpathparser.py
+Date: March 9th, 2022
+Author: Auguste de Pennart
+Description:
+    Finds taxon path from taxid or taxon
+List of functions:
+    input_pattern_generator:
+        takes user input
+        creates search pattern to search against database
+    
+    database_look_up:
+        creates database as list
+        finds index of taxa of interest
+      lineage_look_up:
+          while loop through list to find parent ids of taxa of interest, all the way to root
+          meanwhile finds each id taxon name as you go up the lineage
+List of "non standard modules"
+    No "non standard modules" are used in the program.
+Procedure:
+    1. get database and taxa of interest from input
+    2. find taxa of interest in database
+    3. run through database as a list to find parent ids from which to find lineage
+    4. print lineage to standard output
+Usage:
+    python taxonpathfinder.py taxonomy.dat
+known error:
+    1. use mispelled as well
+    3. use argparse to determine whether input is taxid or taxon 
+    4. does not work with output file request
+    5. input_pattern_generator should reject bad inputs
+ """
 
-@author: inf-49-2021
-"""
 
-#import packages
+#import modules
 #----------------------------------------------------------------------------------------
-import re
-import sys
-from pathlib import Path
-import entrezpy.efetch.efetcher
+import re #module for using regex
+import sys #module for using terminal
+from pathlib import Path #module for verifying file path
+from urllib.request import urlopen #module to open the url 
+from lxml import etree #module to read xml files 
 
-
-#input database
-inputfile = 'taxonomy.dat'
-#outputfile = 'homo_sapiens.json'
+#input variables
+# taxid_or_taxon=
 email='adepennart@gmail.com'
 
 
@@ -35,35 +62,89 @@ email='adepennart@gmail.com'
     #input_pattern:
         #taxon or taxid in regex searchable format
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+#if error shown in url, should escape
 
 def input_pattern_generator():
+    #assigned variables
+    #empty list to add taxa from taxa of interest to root
+    lineage=[]
+    #base url for fetching lineage
+    baseurl_fetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?" 
+    #base url for searching for searching for taxid from taxon
+    baseurl_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?" 
     #get taxon or taxid from user
     user_input=input("Input taxa or taxid of interest\n")
+    first=True
     # checks whether user input is taxon or taxid    
     try:
         #checks if user input is an integer
         if int(user_input) :
             #if user input is an integer creates input_id variable
             input_id = user_input
-            #creates id_flag
+            #creates id_flag=True
             id_flag=True
     #if user input is not an integer the ValueError is raised
     except ValueError:
         #if user input is not an integer creates input_taxa variable        
         input_taxa= user_input
-    #checks whether id_flag was created
+        #creates id_flag=True
+        id_flag=False
+    #checks whether id_flag is True
     if id_flag:
         #if id_flag raised places input_id in input_pattern 
-        input_pattern={'db' : 'taxonomy', 'id' : [input_id], 'retmode': 'xml'}
-    #checks whether id_flag was not created
+        query = f"db=taxonomy&id=[{input_id}]&format=xml" 
+        url = baseurl_fetch+query 
+        f = urlopen(url) #opens the url with urlopen module 
+        resultxml = f.read() #reads the url content 
+        xml = etree.XML(resultxml) #parses the content into xml format 
+        resultelements = xml.xpath("//ScientificName") #search for all tags 
+        #with given xpath 
+        #this is using eran's stuff, could technically new line each value and get what i want(i think)
+        for element in resultelements: 
+            if first:
+                taxon=element.text
+                first=False
+            elif not first:
+                #print (element.text)
+                #adds taxon to lineage list
+                lineage.append(element.text) 
+        lineage.append(taxon) 
+    #checks whether id_flag is False
     elif not id_flag:
-        print('not a taxid, but taxon')
-        exit()
-        #if id_flag not raised places input_taxa in input_pattern
-        input_pattern=f'SCIENTIFIC NAME\s+:\s{input_taxa}$'
-    #function returns both user input and a regex searchable format of user input
-    return user_input, input_pattern
+        #replaces white space with %20, so url can be searched
+        input_taxa = input_taxa.replace(" ", "%20")
+        #if id_flag raised places input_id in input_pattern 
+        query = f"db=taxonomy&term={input_taxa}&format=xml" 
+        url = baseurl_search+query 
+        f = urlopen(url) #opens the url with urlopen module 
+        resultxml = f.read() #reads the url content 
+        # print(resultxml)
+        xml = etree.XML(resultxml) #parses the content into xml format
+        resultelements = xml.xpath("//Id") #search for all tags 
+        for element in resultelements: 
+                # print(element.text)
+                input_id=element.text
+        # print(input_id)
+        new_query = f"db=taxonomy&id=[{input_id}]&format=xml"
+        # print(new_query)
+        new_url = baseurl_fetch+new_query 
+        entrez = urlopen(new_url) #opens the url with urlopen module 
+        resultxml = entrez.read() #reads the url content 
+        xml = etree.XML(resultxml) #parses the content into xml format
+        resultelements = xml.xpath("//ScientificName") #search for all tags 
+        #with given xpath 
+        #this is using eran's stuff, could technically new line each value and get what i want(i think)
+        for element in resultelements: 
+            if first:
+                taxon=element.text
+                first=False
+            elif not first:
+                #print (element.text)
+                #adds taxon to lineage list
+                lineage.append(element.text) 
+        lineage.append(taxon) 
+    #return the list of all taxon and all parent taxon to root
+    return lineage
 
 
 #lineage_find
@@ -203,61 +284,26 @@ def lineage_find(database_input=None, index=None,input_pattern=None,input_name=N
 #main code
 #--------------------------------------------------------------------------------------
 
-#input file verification
-# Here we are looking for 2 arguments (script, input file[1]) placed in the command line.
-# we are also making sure the input is valid
-if len(sys.argv) == 2 and Path(sys.argv[1]).is_file():
-    inputfile = sys.argv[1]
-# here the line accounts for missing input file
-elif len(sys.argv) == 2 and not Path(sys.argv[1]).is_file():
-    try:
-        # this line raises an error if no file exists
-        if len(sys.argv) == 2 and not Path(sys.argv[1]).is_file():
-            raise FileExistsError
-        # for some reason something else goes wrong this error is raised
-        else:
-            raise FileNotFoundError
-    except FileExistsError:
-        print("Input file does not exist in directory or mispelled")
-        exit()
-    except FileNotFoundError:
-        print("some other error")
-        exit()
-
-
 # uses the files specified above in the script
-elif len(sys.argv) == 1:
-    inputfile = inputfile
-    # outputfile = outputfile
-
+if len(sys.argv) == 1:
+    pass
 
 # exits script if unexpected arguments in commandline.
 else:
     try:
         raise ArithmeticError
     except:
-        print("Looking for 2 argument, try again")
+        print("Looking for one argument, try again")
         exit()
 
-
-ef = entrezpy.efetch.efetcher.Efetcher('efetcher', email)
-
-# examples= {'db': 'nucleotide', 'id': [5]}
-# examples={'db' : 'taxonomy', 'id' : [1232345], 'retmode': 'xml'}
-# examples2={'db' : 'taxonomy', 'term':'Actinobacteria', 'retmode': 'xml'}
-
-
-a = ef.inquire(examples)
-# a = ef.inquire(examples2)
-
 #get regex searchable pattern for user inputted taxon or taxid
-taxon_and_pattern=input_pattern_generator()
+lineage=input_pattern_generator()
 
 #find lineage of taxon or taxid 
-lineage=lineage_find(list_and_index[0],list_and_index[1],taxon_and_pattern[1],taxon_and_pattern[0])
+# lineage=lineage_find(list_and_index[0],list_and_index[1],taxon_and_pattern[1],taxon_and_pattern[0])
 
-#graphical representation of lineage
-#assigned variables
+# graphical representation of lineage
+# assigned variables
 tab=""
 count=0
 #for loop through each taxa name
@@ -271,16 +317,17 @@ for taxa in lineage:
     
 # print(lineage)
 
-# import entrezpy.conduit
-# c = entrezpy.conduit.Conduit(email)
-# fetch_influenza = c.new_pipeline()
-# sid = fetch_influenza.add_search({'db' : 'nucleotide', 'term' : 'H3N2 [organism] AND HA', 'rettype':'count', 'sort' : 'Date Released', 'mindate': 2000, 'maxdate':2019, 'datetype' : 'pdat'})
-# fid = fetch_influenza.add_fetch({'retmax' : 10, 'retmode' : 'text', 'rettype': 'fasta'}, dependency=sid)
-# c.run(fetch_influenza)
 
-# import entrezpy.conduit
-# c = entrezpy.conduit.Conduit(email)
-# fetch_influenza = c.new_pipeline()
-# sid = fetch_influenza.add_search({'db' : 'taxonomy', 'term' : 'Homo sapiens[SCIENTIFICNAME]'})
-# fid = fetch_influenza.add_fetch({ 'retmode' : 'text', 'rettype': 'xml'}, dependency=sid)
-# c.run(fetch_influenza)
+
+
+
+
+
+
+
+
+
+
+
+
+
