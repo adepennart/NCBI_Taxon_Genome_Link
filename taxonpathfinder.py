@@ -27,6 +27,8 @@ Procedure:
 Usage:
     python taxonpathfinder.py taxonomy.dat
 known error:
+    1. for species level does not find subspecies
+
     1. use mispelled as well
     3. use argparse to determine whether input is taxid or taxon
     4. does not work with output file request
@@ -299,72 +301,119 @@ def child_find(user_input=None):
     grandchild_id_list=[]
     child_lineage={}
     rev_child_lineage={}
+    counter = 0
+    generations = {}
+    is_species = {}
+
     id_flag = taxon_or_taxid(user_input)
     # checks whether id_flag is True
     if id_flag:
         # database specified to taxonomy
         xml_f = entrez_fetch(user_input, 'taxonomy')
         lineage = data_find(xml_f, 'ScientificName')
-        #be wary of environmental samples
+        # be wary of environmental samples
+        print(lineage)
         taxon = lineage[0]
-        taxon = taxon.text.replace(" ", "%20")
+        taxon = taxon.replace(" ", "%20")
+
+        species_limit = data_find(xml_f, 'Rank')
+        species_limit = species_limit[0]
+        is_species[taxon] = species_limit
+        print(taxon)
+        print(species_limit)
+        #maybe not needed
+        if species_limit == 'species':
+            count += 1
+
+
         xml_s = entrez_search(taxon, 'taxonomy',next_of_kin=True)
         child_id_list = data_find(xml_s, 'Id')
+        child_lineage[taxon] = child_id_list
+
     # checks whether id_flag is False
     elif not id_flag:
         xml_s = entrez_search(user_input, 'taxonomy', next_of_kin=True)
         child_id_list = data_find(xml_s, 'Id')
-    while 1:
-        for ID in child_id_list:
-            # database specified to taxonomy
-            xml_f = entrez_fetch(ID, 'taxonomy')
-            lineage_list = data_find(xml_f, 'ScientificName')
-            # print(data_list)
-            taxon = lineage_list[0]
-            #do this in function
-            taxon = taxon.replace(" ", "%20")
-            child_list.append(taxon)
-            print(rev_child_lineage.values())
-            # if ID in rev_child_lineage.keys():
-            # # if re.search(ID,child_lineage.values()):
-            #     print(ID)
-            #     key=rev_child_lineage[ID]
-            #     key=re.search()
-            #     print(type(key))
-            #     print(str(key))
-            #     child_lineage[key]=taxon
-        #fix this too
-        if 'environmental%20samples' in child_list:
-            child_list.remove('environmental%20samples')
-        # print(child_list)
-        for ID in child_list:
-            # print(ID)
-            xml_s = entrez_search(ID, 'taxonomy', next_of_kin=True)
-            data_list = data_find(xml_s, 'Id')
-            for n in data_list:
-                grandchild_id_list.append(n)
-                print(ID, 'hey')
-                rev_child_lineage[n] = ID
-            print(grandchild_id_list)
-            child_lineage[ID] = data_list
-        if not grandchild_id_list:
-            count+=1
-            print("no next gen")
-            # print(grandchild_id_list)
-        else:
-            print('next gen present')
-            # print(grandchild_id_list)
-        child_id_list = grandchild_id_list
-        # print(child_id_list)
-        child_list = []
-        grandchild_id_list = []
-        if count >=1:
-            break
-    print(rev_child_lineage)
-    return child_lineage
+        child_lineage[user_input] = child_id_list
+
+        xml_s = entrez_search(user_input, 'taxonomy')
+        ID = data_find(xml_s, 'Id')
+        # not verified if single variable
+        ID = ID[0]
+        xml_f = entrez_fetch(ID, 'taxonomy')
+        species_limit = data_find(xml_f, 'Rank')
+        species_limit = species_limit[0]
+        print(species_limit)
+        is_species[user_input] = species_limit
+        #maybe not needed
+        if species_limit == 'species':
+            count += 1
+
+    generations[counter] = child_lineage
+    counter+=1
+    child_lineage = {}
+    if count ==0 :
+        while 1:
+            for ID in child_id_list:
+                # database specified to taxonomy
+                xml_f = entrez_fetch(ID, 'taxonomy')
+                lineage_list = data_find(xml_f, 'ScientificName')
+                species_limit = data_find(xml_f, 'Rank')
+                species_limit = species_limit[0]
+                print(species_limit)
+                # if species_limit == 'species':
+                #     count+=1
+                # print(data_list)
+                taxon = lineage_list[0]
+                #do this in function
+                taxon = taxon.replace(" ", "%20")
+                child_list.append(taxon)
+                # print(rev_child_lineage.values())
+                is_species[taxon]=species_limit
+                if ID in rev_child_lineage.keys():
+                    rev_child_lineage[ID]=taxon
+                # if re.search(ID,child_lineage.values()):
+                #     print(ID)
+                #     key=rev_child_lineage[ID]
+                #     key=re.search()
+                #     print(type(key))
+                #     print(str(key))
+                #     child_lineage[key]=taxon
+            #fix this too
+            if 'environmental%20samples' in child_list:
+                child_list.remove('environmental%20samples')
+            # print(child_list)
+            for ID in child_list:
+                # print(ID)
+                xml_s = entrez_search(ID, 'taxonomy', next_of_kin=True)
+                data_list = data_find(xml_s, 'Id')
+                for n in data_list:
+                    grandchild_id_list.append(n)
+                    # print(ID)
+                    rev_child_lineage[n] = ID
+                print(grandchild_id_list)
+                child_lineage[ID] = data_list
+            if not grandchild_id_list:
+                count+=1
+                print("no next gen")
+                # print(grandchild_id_list)
+            else:
+                print('next gen present')
+                # print(grandchild_id_list)
+            child_id_list = grandchild_id_list
+            # print(child_id_list)
+            generations[counter] = child_lineage
+            child_list = []
+            grandchild_id_list = []
+            child_lineage={}
+            counter += 1
+            if count >=1:
+                break
+    # print(rev_child_lineage)
+    return generations, is_species
 
 #have to build some system that index's further in dictionary, to add new family
-#
+#that will be for a tree builder function if needed
 
 # main code
 # --------------------------------------------------------------------------------------
@@ -402,17 +451,29 @@ user_input = user_input.replace(" ", "%20")
 #     count+=1
 
 #
-child = child_find(user_input)
-print(child)
+output = child_find(user_input)
+generations=output[0]
+is_species=output[1]
+print(is_species)
+# print(child[len(child)-1])
+for generation, species in generations.items():
+    #could coome up with a way to not forloop through each generation if not needed
+    for name, id in species.items():
+        print(name)
+        if is_species[name]== 'species':
+            genomes = assembled_genome_find(name)
+            print(f'number of assembled genomes for {name} is {genomes}')
+        else:
+            pass
 
 #
 # #
-# genomes=assembled_genome_find(user_input)
-#
-#
-#
-# # # print(lineage)
-# print(f'number of assembled genomes for {user_input} is {genomes}')
+# genomes=assembled_genome_find('Homo%20sapiens%20neanderthalensis')
+# #
+# #
+# #
+# # # # print(lineage)
+# print(f'number of assembled genomes for Homo%20sapiens%20neanderthalensis is {genomes}')
 
 
 
