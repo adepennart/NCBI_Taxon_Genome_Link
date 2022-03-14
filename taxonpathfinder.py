@@ -2,21 +2,25 @@
 # -*- coding: utf-8 -*-
 """
 Title: taxonpathparser.py
-Date: March 9th, 2022
+Date: March 13th, 2022
 Author: Auguste de Pennart
 Description:
     Finds taxon path from taxid or taxon
 List of functions:
-    input_pattern_generator:
-        takes user input
-        creates search pattern to search against database
+    entrez_search:
 
-    database_look_up:
-        creates database as list
-        finds index of taxa of interest
-      lineage_look_up:
-          while loop through list to find parent ids of taxa of interest, all the way to root
-          meanwhile finds each id taxon name as you go up the lineage
+    entrez_fetch:
+
+    data_find:
+
+    taxon_or_taxid:
+
+    lineage_search:
+
+    assembled_genome_find:
+
+    child_find:
+
 List of "non standard modules"
     No "non standard modules" are used in the program.
 Procedure:
@@ -25,14 +29,10 @@ Procedure:
     3. run through database as a list to find parent ids from which to find lineage
     4. print lineage to standard output
 Usage:
-    python taxonpathfinder.py taxonomy.dat
+    python taxonpathfinder.py
 known error:
-    1. for species level does not find subspecies
-
-    1. use mispelled as well
-    3. use argparse to determine whether input is taxid or taxon
+    2. lineage is obsolete right now, hopefully can get parent taxa not genome assembled
     4. does not work with output file request
-    5. input_pattern_generator should reject bad inputs
  """
 
 # import modules
@@ -42,61 +42,28 @@ import sys  # module for using terminal
 from pathlib import Path  # module for verifying file path
 from urllib.request import urlopen  # module to open the url
 from lxml import etree  # module to read xml files
-
-# input variables
-# taxid_or_taxon=
-email = 'adepennart@gmail.com'
-
-# taxon_or_taxid
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# input variables:
-# no inputs
-
-# use:
-# Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
-# format for said input.
-
-# return:
-# user_input:
-# user input when prompted to input taxa or taxid
-# input_pattern:
-# taxon or taxid in regex searchable format
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if error shown in url, should escape
-
-def taxon_or_taxid(user_input=None):
-    # checks whether user input is taxon or taxid
-    try:
-        # checks if user input is an integer
-        if int(user_input):
-            # creates id_flag=True
-            id_flag = True
-    # if user input is not an integer the ValueError is raised
-    except ValueError:
-        # creates id_flag=True
-        id_flag = False
-    # returns whether id_flag is True or False
-    return id_flag
-
+# ----------------------------------------------------------------------------------------
+#functions
+# ----------------------------------------------------------------------------------------
 # entrez_search
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # input variables:
-# no inputs
+    # user_input:
+        #user input as either taxa(word) or taxid(number)
+    #database:
+        #NCBI database to find user_input
+    #next_of_kin:
+        #finds children taxon on NCBI taxonomy database
 
 # use:
-# Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
-# format for said input.
+    #
 
 # return:
-# user_input:
-# user input when prompted to input taxa or taxid
-# input_pattern:
-# taxon or taxid in regex searchable format
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if error shown in url, should escape
+    # xml_s:
+        # xml parsed url search
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def entrez_search(user_input=None,database=None,next_of_kin=False):
-    # assigned variables
     # base url for searching for searching for taxid from taxon
     baseurl_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
     if next_of_kin:
@@ -111,28 +78,29 @@ def entrez_search(user_input=None,database=None,next_of_kin=False):
     # print(entrez_s)
     xml_s = etree.XML(entrez_s_read)  # parses the content into xml format
     if xml_s is None:
-        print('entrez_search returned empty')
+        # print('entrez_search returned empty')
+        pass
     else:
-        print('successful entrez_search')
+        # print('successful entrez_search')
+        pass
     return xml_s
+
 
 # entrez_fetch
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # input variables:
-# no inputs
+    # user_input:
+        # user input as either taxa(word) or taxid(number)
+    # database:
+        # NCBI database to find user_input
 
 # use:
-# Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
-# format for said input.
+    #
 
 # return:
-# user_input:
-# user input when prompted to input taxa or taxid
-# input_pattern:
-# taxon or taxid in regex searchable format
+    # xml_f:
+        # xml parsed url search
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if error shown in url, should escape
-
 def entrez_fetch(user_input=None,database=None):
     # assigned variables
     # base url for fetching lineage
@@ -144,63 +112,105 @@ def entrez_fetch(user_input=None,database=None):
     entrez_read = entrez.read()  # reads the url content
     xml_f = etree.XML(entrez_read)  # parses the content into xml format
     if xml_f is None:
-        print('entrez_fetch returned empty')
+        # print('entrez_fetch returned empty')
+        pass
     else:
-        print('successful entrez_fetch')
-
+        # print('successful entrez_fetch')
+        pass
     return xml_f
 
 # data_find
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # input variables:
-# no inputs
+    # xml:
+        #parsed xml variable
+    #pattern_search:
+        # element of xml variable of interest
+    #tree_build:
+        #builds lineage for taxon of interest
+    #first_data:
+        # pulls out first instance of pattern_search
 
 # use:
-# Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
-# format for said input.
+    #
 
 # return:
-# user_input:
-# user input when prompted to input taxa or taxid
-# input_pattern:
-# taxon or taxid in regex searchable format
+    # data_list:
+        #pattern_match(es) from xml variable
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if error shown in url, should escape
-
-def data_find(xml=None,pattern_search=None,find_first=False):
+def data_find(xml=None,pattern_search=None,tree_build=False,first_data=False):
     #
     data_list=[]
     #
     original=False
     #
     pattern_match = xml.xpath(f"//{pattern_search}")  # search for all tags
+    # with given xpath
+    # this is using eran's stuff, could technically new line each value and get what i want(i think)
+    #what about if there is only one match?
+    for match in pattern_match:
+        # print(match.text)
+        if tree_build:
+            # create original, variable for input taxon
+            original = match.text
+            tree_build = False
+        elif not tree_build:
+            # print (match.text)
+            # adds taxon to lineage list
+            data_list.append(match.text)
+            # print(data_list)
+    if original:
+        data_list.append(original)
+        print('original specified')
+    else:
+        pass
+        # print('original unspecified')
+    if first_data:
+        data_list = data_list[0]
+        data_list = data_list.replace(" ", "%20")
+        data_list = '\"' + data_list + '\"'
+    elif not first_data:
+        pass
+    return data_list
+
+# taxon_or_taxid
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# input variables:
+    # user_input:
+        #
+
+# use:
+    #
+
+# return:
+    # species:
+        #
+    # ID:
+        #
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+def taxon_or_taxid(user_input=None):
+    # checks whether user input is taxon or taxid
     try:
-        # with given xpath
-        # this is using eran's stuff, could technically new line each value and get what i want(i think)
-        #what about if there is only one match?
-        for match in pattern_match:
-            # print(match.text)
-            if find_first:
-                # create original, variable for input taxon
-                original = match.text
-                find_first = False
-            elif not find_first:
-                # print (match.text)
-                # adds taxon to lineage list
-                data_list.append(match.text)
-                # print(data_list)
-        if original:
-            data_list.append(original)
-            print('original specified')
-        else:
-            pass
-            # print('original unspecified')
-    except UnboundLocalError:
+        # checks if user input is an integer
+        if int(user_input):
+            ID=user_input
+            xml_f = entrez_fetch(user_input, 'taxonomy')
+            species = data_find(xml_f, 'ScientificName',first_data=True)
+    # if user input is not an integer the ValueError is raised
+    except ValueError:
+        species=user_input
+        xml_s = entrez_search(user_input, 'taxonomy')
+        ID = data_find(xml_s, 'Id')
+    try:
+        test=species[0]+ ID[0]
+    except IndexError:
         # prints to standard output that taxon or taxid inputted was not found in database
-        print("taxid not found or mispelled, please try again")
+        print("taxid not found in NCBI taxonomy database or misspelled, please try again")
         # exits script
         exit()
-    return data_list
+    # returns whether id_flag is True or False
+    return species, ID
+
 
 # lineage_search
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -217,24 +227,11 @@ def data_find(xml=None,pattern_search=None,find_first=False):
 # input_pattern:
 # taxon or taxid in regex searchable format
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if error shown in url, should escape
-
 def lineage_search(user_input=None):
-    id_flag=taxon_or_taxid(user_input)
-    # checks whether id_flag is True
-    if id_flag:
-        #database specified to taxonomy
-        xml_f=entrez_fetch(user_input,'taxonomy')
-        lineage=data_find(xml_f,'ScientificName', find_first=True)
-    # checks whether id_flag is False
-    elif not id_flag:
-        xml_s=entrez_search(user_input,'taxonomy')
-        ID=data_find(xml_s,'Id')
-        #not verified if single variable
-        ID = ID[0]
-        # print(ID)
-        xml_f = entrez_fetch(ID, 'taxonomy')
-        lineage = data_find(xml_f, 'ScientificName', find_first=True)
+    user_input=taxon_or_taxid(user_input)
+    #database specified to taxonomy
+    xml_f=entrez_fetch(user_input[1],'taxonomy')
+    lineage=data_find(xml_f,'ScientificName', tree_build=True)
     # return the list of all taxon and all parent taxon to root
     return lineage
 
@@ -256,14 +253,9 @@ def lineage_search(user_input=None):
 # if error shown in url, should escape
 
 def assembled_genome_find(user_input=None):
-    id_flag=taxon_or_taxid(user_input)
-    if id_flag:
-        xml_s=entrez_search(user_input,'assembly')
-        genomes=data_find(xml_s,'Id')
-    # checks whether id_flag is False
-    elif not id_flag:
-        xml_s = entrez_search(user_input, 'assembly')
-        genomes = data_find(xml_s, 'Id')
+    user_input=taxon_or_taxid(user_input)
+    xml_s=entrez_search(user_input[0],'assembly')
+    genomes=data_find(xml_s,'Id')
     # return the list of all taxon and all parent taxon to root
     return len(genomes)
 
@@ -297,58 +289,26 @@ def assembled_genome_find(user_input=None):
 def child_find(user_input=None):
     #variables
     count =0
+    counter = 0
     child_list=[]
     grandchild_id_list=[]
     child_lineage={}
-    rev_child_lineage={}
-    counter = 0
     generations = {}
     is_species = {}
-
-    id_flag = taxon_or_taxid(user_input)
-    # checks whether id_flag is True
-    if id_flag:
-        # database specified to taxonomy
-        xml_f = entrez_fetch(user_input, 'taxonomy')
-        lineage = data_find(xml_f, 'ScientificName')
-        # be wary of environmental samples
-        print(lineage)
-        taxon = lineage[0]
-        taxon = taxon.replace(" ", "%20")
-
-        species_limit = data_find(xml_f, 'Rank')
-        species_limit = species_limit[0]
-        is_species[taxon] = species_limit
-        print(taxon)
-        print(species_limit)
-        #maybe not needed
-        if species_limit == 'species':
-            count += 1
-
-
-        xml_s = entrez_search(taxon, 'taxonomy',next_of_kin=True)
-        child_id_list = data_find(xml_s, 'Id')
-        child_lineage[taxon] = child_id_list
-
-    # checks whether id_flag is False
-    elif not id_flag:
-        xml_s = entrez_search(user_input, 'taxonomy', next_of_kin=True)
-        child_id_list = data_find(xml_s, 'Id')
-        child_lineage[user_input] = child_id_list
-
-        xml_s = entrez_search(user_input, 'taxonomy')
-        ID = data_find(xml_s, 'Id')
-        # not verified if single variable
-        ID = ID[0]
-        xml_f = entrez_fetch(ID, 'taxonomy')
-        species_limit = data_find(xml_f, 'Rank')
-        species_limit = species_limit[0]
-        print(species_limit)
-        is_species[user_input] = species_limit
-        #maybe not needed
-        if species_limit == 'species':
-            count += 1
-
+    #
+    user_input = taxon_or_taxid(user_input)
+    # database specified to taxonomy
+    xml_f = entrez_fetch(user_input[1], 'taxonomy')
+    taxon = data_find(xml_f, 'ScientificName',first_data=True)
+    species_limit = data_find(xml_f, 'Rank',first_data=True)
+    is_species[taxon] = species_limit
+    print(f'{taxon.replace("%20", " ")} is  of rank {species_limit}')
+    #maybe not needed
+    if species_limit == 'species':
+        count += 1
+    xml_s = entrez_search(taxon, 'taxonomy',next_of_kin=True)
+    child_id_list = data_find(xml_s, 'Id')
+    child_lineage[taxon] = child_id_list
     generations[counter] = child_lineage
     counter+=1
     child_lineage = {}
@@ -357,28 +317,11 @@ def child_find(user_input=None):
             for ID in child_id_list:
                 # database specified to taxonomy
                 xml_f = entrez_fetch(ID, 'taxonomy')
-                lineage_list = data_find(xml_f, 'ScientificName')
-                species_limit = data_find(xml_f, 'Rank')
-                species_limit = species_limit[0]
-                print(species_limit)
-                # if species_limit == 'species':
-                #     count+=1
-                # print(data_list)
-                taxon = lineage_list[0]
-                #do this in function
-                taxon = taxon.replace(" ", "%20")
+                taxon = data_find(xml_f, 'ScientificName',first_data=True)
+                species_limit = data_find(xml_f, 'Rank',first_data=True)
+                print(f'{taxon.replace("%20", " ")} is  of rank {species_limit}')
                 child_list.append(taxon)
-                # print(rev_child_lineage.values())
                 is_species[taxon]=species_limit
-                if ID in rev_child_lineage.keys():
-                    rev_child_lineage[ID]=taxon
-                # if re.search(ID,child_lineage.values()):
-                #     print(ID)
-                #     key=rev_child_lineage[ID]
-                #     key=re.search()
-                #     print(type(key))
-                #     print(str(key))
-                #     child_lineage[key]=taxon
             #fix this too
             if 'environmental%20samples' in child_list:
                 child_list.remove('environmental%20samples')
@@ -390,16 +333,13 @@ def child_find(user_input=None):
                 for n in data_list:
                     grandchild_id_list.append(n)
                     # print(ID)
-                    rev_child_lineage[n] = ID
-                print(grandchild_id_list)
                 child_lineage[ID] = data_list
             if not grandchild_id_list:
                 count+=1
                 print("no next gen")
-                # print(grandchild_id_list)
             else:
                 print('next gen present')
-                # print(grandchild_id_list)
+            print(f'found {len(grandchild_id_list)} children taxon')
             child_id_list = grandchild_id_list
             # print(child_id_list)
             generations[counter] = child_lineage
@@ -409,11 +349,7 @@ def child_find(user_input=None):
             counter += 1
             if count >=1:
                 break
-    # print(rev_child_lineage)
     return generations, is_species
-
-#have to build some system that index's further in dictionary, to add new family
-#that will be for a tree builder function if needed
 
 # main code
 # --------------------------------------------------------------------------------------
@@ -430,9 +366,12 @@ else:
         print("Looking for one argument, try again")
         exit()
 
+email = 'adepennart@gmail.com'
+# email = input("Input email for NCBI database access\n")
 user_input = input("Input taxa or taxid of interest\n")
 # replaces white space with %20, so url can be searched
 user_input = user_input.replace(" ", "%20")
+user_input = '\"'+ user_input + '\"'
 
 # #get regex searchable pattern for user inputted taxon or taxid
 # lineage=lineage_search(user_input)
@@ -454,26 +393,19 @@ user_input = user_input.replace(" ", "%20")
 output = child_find(user_input)
 generations=output[0]
 is_species=output[1]
-print(is_species)
+# print(is_species)
 # print(child[len(child)-1])
 for generation, species in generations.items():
     #could coome up with a way to not forloop through each generation if not needed
     for name, id in species.items():
-        print(name)
-        if is_species[name]== 'species':
+        # print(name)
+        # if is_species[name]== 'species':
+        if is_species[name] == '\"'+'species'+'\"':
             genomes = assembled_genome_find(name)
+            name=name.replace('%20', ' ')
             print(f'number of assembled genomes for {name} is {genomes}')
         else:
             pass
-
-#
-# #
-# genomes=assembled_genome_find('Homo%20sapiens%20neanderthalensis')
-# #
-# #
-# #
-# # # # print(lineage)
-# print(f'number of assembled genomes for Homo%20sapiens%20neanderthalensis is {genomes}')
 
 
 
