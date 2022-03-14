@@ -33,6 +33,7 @@ Usage:
 known error:
     2. lineage is obsolete right now, hopefully can get parent taxa not genome assembled
     4. does not work with output file request
+    3. ask if environmental samples wanted
  """
 
 # import modules
@@ -104,6 +105,7 @@ def entrez_search(user_input=None,database=None,next_of_kin=False):
 def entrez_fetch(user_input=None,database=None):
     # assigned variables
     # base url for fetching lineage
+    print(user_input)
     baseurl_fetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
     #
     query = f"db={database}&id=[{user_input}]&format=xml&RetMax=100000"
@@ -302,7 +304,7 @@ def child_find(user_input=None):
     taxon = data_find(xml_f, 'ScientificName',first_data=True)
     species_limit = data_find(xml_f, 'Rank',first_data=True)
     is_species[taxon] = species_limit
-    print(f'{taxon.replace("%20", " ")} is  of rank {species_limit}')
+    print(f'''{taxon.replace("%20", " ").replace('"', "")} is  of rank {species_limit.replace("%20", " ").replace('"', "")}''')
     #maybe not needed
     if species_limit == 'species':
         count += 1
@@ -319,7 +321,7 @@ def child_find(user_input=None):
                 xml_f = entrez_fetch(ID, 'taxonomy')
                 taxon = data_find(xml_f, 'ScientificName',first_data=True)
                 species_limit = data_find(xml_f, 'Rank',first_data=True)
-                print(f'{taxon.replace("%20", " ")} is  of rank {species_limit}')
+                print(f'''{taxon.replace("%20", " ").replace('"', "")} is  of rank {species_limit.replace("%20", " ").replace('"', "")}''')
                 child_list.append(taxon)
                 is_species[taxon]=species_limit
             #fix this too
@@ -399,8 +401,7 @@ for generation, species in generations.items():
     #could coome up with a way to not forloop through each generation if not needed
     for name, id in species.items():
         # print(name)
-        # if is_species[name]== 'species':
-        if is_species[name] == '\"'+'species'+'\"':
+        if is_species[name]== '\"'+'species'+'\"':
             genomes = assembled_genome_find(name)
             name=name.replace('%20', ' ')
             print(f'number of assembled genomes for {name} is {genomes}')
@@ -408,5 +409,6 @@ for generation, species in generations.items():
             pass
 
 
-
+#input species, ask if you cna input genus
+#while loop looking through each parent group until genome sequence found
 
