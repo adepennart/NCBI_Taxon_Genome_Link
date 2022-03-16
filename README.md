@@ -1,3 +1,4 @@
+
 mkdir Population_genetics
 cd Population_genetics/
 conda create -n population_genetics
@@ -27,3 +28,4 @@ then pull out number of genomes or genes
 https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=taxonomy&term=Homosapiens
 
 https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=9606&format=xml
+=======
