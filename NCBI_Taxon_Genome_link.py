@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Title: taxonpathparser.py
+Title: NCBI_Taxon_Genome_Link.py
 Date: March 14th, 2022
 Author: Auguste de Pennart
 Description:
@@ -40,7 +40,7 @@ Procedure:
     4. print lineage to standard output
 
 Usage:
-    python taxonpathfinder.py [-h] [-v] USER_INPUT [USER_INPUT ...]
+    python NCBI_Taxon_Genome_Link.py [-h] [-v] USER_INPUT [USER_INPUT ...]
 
 known error:
     1. lineage_search and lineage_visualisation are obsolete right now, finding parent could be of use in program development
@@ -85,6 +85,12 @@ req_arg.add_argument('-i', '--input',
                     nargs='+',
                     required=True,
                     help='user-specified taxid or taxon')
+
+parser.add_argument('-o', '--output',
+                    metavar='OUTPUT',
+                    dest='outputfile',
+                    help='optional genome assembled outputfile')
+
 args=parser.parse_args()#parses command line
 
 #functions
@@ -360,6 +366,7 @@ def species_find(generations=None,is_species=None):
 # taxon or taxid in regex searchable format
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def assembled_genome_find(species_list=None):
+    genome_dict={}#assembled genomes for each species
     for species in species_list: #for loop through species
         list_species=[species]
         # print(species)
@@ -372,15 +379,32 @@ def assembled_genome_find(species_list=None):
         # print(f"""number of assembled genomes for {species_ID[0].replace('%20', ' ').replace('"', "")} is {len(genomes)}""")
         #print to standard output species and number of genomes
         print(f"""number of assembled genomes for {species.replace('%20', ' ').replace('"', "")} is {len(genomes)}""")
-    return genomes
+        genome_dict[species]=genomes#add genome list to each species
+    return genome_dict
+
+#print_to_output
+def print_to_output(genome_id_dict=None,outputfile=None):
+    try:
+        output = open(outputfile, 'w') # opening outputfile
+        for species,ID_list in genome_id_dict.items():
+            # print(species.replace('%20', ' ').replace('"', ""))
+            print(species.replace('%20', ' ').replace('"', ""), file=output)
+            for ID in ID_list:
+                # print(ID)
+                print(ID, file=output)
+        # output.close()  # closing
+        output.close()
+    except TypeError:
+        pass
 
 # main code
 # --------------------------------------------------------------------------------------
 #two dictionaries created from child_find function
-output = child_find(args.user_input)
+generations_and_species = child_find(args.user_input)
 # print(is_species)
 #dictionaries looped through to output species_list
-species_list=species_find(output[0],output[1])
+species_list=species_find(generations_and_species[0],generations_and_species[1])
 #number of assembled genomes printed out for each species
 genomes = assembled_genome_find(species_list)
 # print(genomes)
+print_to_output(genomes,args.outputfile)
