@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Title: NCBI_Taxon_Genome_Link.py
-Date: March 14th, 2022
+Date: March 18th, 2022
 Author: Auguste de Pennart
 Description:
     This program finds number of genome assemblies for user-specified taxid or taxon
@@ -40,7 +40,7 @@ Procedure:
     4. print lineage to standard output
 
 Usage:
-    python NCBI_Taxon_Genome_Link.py [-h] [-v] USER_INPUT [USER_INPUT ...]
+    python NCBI_Taxon_Genome_link.py [-h] [-v] [-s] -e EMAIL -i USER_INPUT [USER_INPUT ...] [-o OUTPUT]
 
 known error:
     1. lineage_search and lineage_visualisation are obsolete right now, finding parent could be of use in program development
@@ -53,6 +53,7 @@ known error:
     8. heavy reliance on xpath and other dependencies without through knowledge
     9. first_data in data_find could be more efficient
     10. uncultured and environmental not removed
+    11. assumes no genome assembly data below species rank
  """
 
 # import modules
@@ -72,20 +73,25 @@ req_arg= parser.add_argument_group(title="required arguments")
 parser.add_argument('-v', '--version',
                     action='version',
                     version='%(prog)s 2.0')
+#creates the argument to include or not taxonomic ranks below species
+parser.add_argument('-s', '--sub_species',
+                    action='store_true',
+                    dest='sub_species',
+                    help= 'keeps taxonomic ranks below species')
 #creates the argument where email will be inputed
 req_arg.add_argument('-e', '--email',
                     metavar='EMAIL',
                     dest='email',
                     required=True,
                     help="email required to access NCBI's databases")
-#creates the argument where taxon or taxid will be inputed
+#creates the argument where taxon or taxid will be inputted
 req_arg.add_argument('-i', '--input',
                     metavar='USER_INPUT',
                     dest='user_input',
                     nargs='+',
                     required=True,
                     help='user-specified taxid or taxon')
-
+#creates the optinal argument for output file name
 parser.add_argument('-o', '--output',
                     metavar='OUTPUT',
                     dest='outputfile',
@@ -277,7 +283,7 @@ def lineage_visualisation(lineage=None):
     #is_species:
         #dictionary of taxon name and taxonomic rank
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def child_find(user_input=None):
+def child_find(user_input=None, sub_species=None):
     count =0 #last child taxon counter
     counter = 0 #generation counter
     child_list=[] #list of children taxa
@@ -288,9 +294,6 @@ def child_find(user_input=None):
     user_input = taxon_or_taxid(user_input) # searches database for reciprocal taxid or taxon
     child_id_list=[user_input[1]] #pulls out taxid into a list
     # print(user_input)
-    # #fix this
-    # if species_limit == '"species"':
-    #     count += 1
     while 1: #while loop that breaks when no next children taxa exists
         for ID in child_id_list: #for every taxid
             xml_f = entrez_fetch(ID, 'taxonomy') #create xml of taxid from taxonomy database
@@ -298,8 +301,14 @@ def child_find(user_input=None):
             species_limit = data_find(xml_f, 'Rank',first_data=True) #finds taxonomic rank from xml
             #prints to standard output taxon and taxonomic rank
             print(f'''{taxon.replace("%20", " ").replace('"', "")} is of rank {species_limit.replace("%20", " ").replace('"', "")}''')
-            child_list.append(taxon) #adds taxon to taxon list, which will be for looping through later to determine taxids
             is_species[taxon]=species_limit #adds taxon and taxonomic rank to is_species dictionary
+            if sub_species: # if sub_species flag raised keeps taxonomic rank below species
+                child_list.append(taxon)#adds taxon to taxon list, which will be for looping through later to determine taxids
+            elif not sub_species: #if not sub_species flag raised keeps taxonomic rank below species
+                if species_limit == '"species"':
+                    child_lineage[taxon]=[] #removes ranks below species
+                elif not species_limit == '"species"':
+                    child_list.append(taxon) #adds taxon to taxon list, which will be for looping through later to determine taxids
         #fix this too
         if '"environmental%20samples"' in child_list: #does not loop through environmental samples
             child_list.remove('"environmental%20samples"')
@@ -314,17 +323,19 @@ def child_find(user_input=None):
                 # print(ID)
             child_lineage[ID] = data_list #adds id and all children taxids to child lineage dictionary
         if not grandchild_id_list: #if grandchild_id_list empty while loop breaks
+            # count=len(child_id_list)
             count+=1
         print(f'found {len(grandchild_id_list)} children taxon') #prints to standard output how many taxa in next generation
+        generations[counter] = child_lineage #child_lineage added to generations dictionary along with current generation
+        # if count == len(child_id_list): #break if no next generation
+        if count >= 1: #break if no next generation
+            break
         child_id_list = grandchild_id_list #change variable names in preparation for next while loop
         # print(child_id_list)
-        generations[counter] = child_lineage #child_lineage added to generations dictionary along with current generation
         child_list = [] #reset child_list
         grandchild_id_list = [] #reset grandchild_list
         child_lineage={} #reset child_lineage
         counter += 1 #set up next generation number
-        if count >=1: #break if no next generation
-            break
     return generations, is_species
 
 # species_find change to dictionary searcher
@@ -360,10 +371,10 @@ def species_find(generations=None,is_species=None):
     # Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
     # format for said input.
 # return:
-# user_input:
-# user input when prompted to input taxa or taxid
-# input_pattern:
-# taxon or taxid in regex searchable format
+    # user_input:
+        # user input when prompted to input taxa or taxid
+    # input_pattern:
+        # taxon or taxid in regex searchable format
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def assembled_genome_find(species_list=None):
     genome_dict={}#assembled genomes for each species
@@ -382,7 +393,20 @@ def assembled_genome_find(species_list=None):
         genome_dict[species]=genomes#add genome list to each species
     return genome_dict
 
-#print_to_output
+# print_to_output
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# input variables:
+    # genone_id_dict:
+        # list of species of interest to user
+# use:
+    # Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
+    # format for said input.
+# return:
+# user_input:
+# user input when prompted to input taxa or taxid
+# input_pattern:
+# taxon or taxid in regex searchable format
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def print_to_output(genome_id_dict=None,outputfile=None):
     try:
         output = open(outputfile, 'w') # opening outputfile
@@ -400,7 +424,7 @@ def print_to_output(genome_id_dict=None,outputfile=None):
 # main code
 # --------------------------------------------------------------------------------------
 #two dictionaries created from child_find function
-generations_and_species = child_find(args.user_input)
+generations_and_species = child_find(args.user_input, args.sub_species)
 # print(is_species)
 #dictionaries looped through to output species_list
 species_list=species_find(generations_and_species[0],generations_and_species[1])
