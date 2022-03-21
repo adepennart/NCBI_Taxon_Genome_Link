@@ -23,7 +23,7 @@ List of functions:
     child_find:
         while loop through each child taxa,
         adding taxa to generations dictionary
-        and whether its a species to is_species dictionary
+        and whether it's a species to is_species dictionary
     species_find:
         find species by for looping through nested generations dictionary and creating a list of species
     assembled_genome_find:
@@ -34,26 +34,26 @@ List of "non standard modules"
     No "non standard modules" are used in the program.
 
 Procedure:
-    1. get database and taxa of interest from input
-    2. find taxa of interest in database
-    3. run through database as a list to find parent ids from which to find lineage
-    4. print lineage to standard output
+    1. get taxon of interest from user
+    2. find taxa of interest in NCBI taxonomy database
+    3. find if taxonomic rank is species
+    4. find if any children taxa exist
+    5. repeat steps 3 & 4 till no children taxa left
+    6. search NCBI assembly databse for all taxa determined as species
+    7. print number of genomes assembled for each species
 
 Usage:
     python NCBI_Taxon_Genome_link.py [-h] [-v] [-s] -e EMAIL -i USER_INPUT [USER_INPUT ...] [-o OUTPUT]
 
 known error:
-    1. lineage_search and lineage_visualisation are obsolete right now, finding parent could be of use in program development
-    2. does not produce an output file
-    3. removes environmental samples from search, an argparse option could be available
-    4. only searches assemblies, searching other population genetics information could be of use
-    5. forloops through each generation, even if not needed
-    6. species find could be more general, to nested dictionary pattern matcher
-    7. mus is a species and genus, but just takes first instance in file
-    8. heavy reliance on xpath and other dependencies without through knowledge
-    9. first_data in data_find could be more efficient
-    10. uncultured and environmental not removed
-    11. assumes no genome assembly data below species rank
+    1. lineage_search and lineage_visualisation are obsolete right now, finding parent could be of use in future program development
+    2. removes environmental samples from search, an argparse option could be available
+    3. only searches assemblies, searching other population genetics information could be of use
+    4. forloops through each generation, even if not needed in species_find function
+    5. taxon_or_taxid takes first match from NCBI taxonomy database, even if multiple matches are present
+    6. heavy reliance on urllib3 and lxml
+    7. first_data in data_find could be put on one line
+    8. uncultured and environmental samples not removed from search when higher taxon then species
  """
 
 # import modules
@@ -96,7 +96,6 @@ parser.add_argument('-o', '--output',
                     metavar='OUTPUT',
                     dest='outputfile',
                     help='optional genome assembled outputfile')
-
 args=parser.parse_args()#parses command line
 
 #functions
@@ -338,7 +337,7 @@ def child_find(user_input=None, sub_species=None):
         counter += 1 #set up next generation number
     return generations, is_species
 
-# species_find change to dictionary searcher
+# species_find
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # input variables:
     # generations:
@@ -368,13 +367,10 @@ def species_find(generations=None,is_species=None):
     # species_list:
         # list of species of interest to user
 # use:
-    # Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
-    # format for said input.
+    # displays number of assmebled genomes for each species in species_list
 # return:
-    # user_input:
-        # user input when prompted to input taxa or taxid
-    # input_pattern:
-        # taxon or taxid in regex searchable format
+    # genome_dict:
+        # a dictionary of each species and a list of all genome ids 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def assembled_genome_find(species_list=None):
     genome_dict={}#assembled genomes for each species
@@ -397,15 +393,13 @@ def assembled_genome_find(species_list=None):
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # input variables:
     # genone_id_dict:
-        # list of species of interest to user
+        # a dictionary of each species and a list of all genome ids 
+    #outputfile:
+        # name of output file
 # use:
-    # Takes user input as either taxa(word) or taxid(number) and creates a regex searchable
-    # format for said input.
+    # when outputfile specified creates an output file of all species and the genome ids
 # return:
-# user_input:
-# user input when prompted to input taxa or taxid
-# input_pattern:
-# taxon or taxid in regex searchable format
+    # no return
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 def print_to_output(genome_id_dict=None,outputfile=None):
     try:
