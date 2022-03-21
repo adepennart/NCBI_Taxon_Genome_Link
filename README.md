@@ -57,8 +57,8 @@ python NCBI_Taxon_Genome_link.py --version
 ```
 
 There are two required fields for running  NCBI_Taxon_Genome_link.py, EMAIL and USER_INPUT. 
-Email is required for accessing NCBI's databases.
-USER_INPUT is your taxon/taxid of interest.
+Email is required for accessing NCBI's databases remotely.
+USER_INPUT is your taxon/TaxID of interest.
 Both can be typed out directly on the terminal.
 
 ```bash=
@@ -87,14 +87,14 @@ With scientific species name.
 python NCBI_Taxon_Genome_link.py -e researcher@fake_email.com -i Homo sapiens
 ```
 
-With taxid name.
+With TaxID.
 ```bash=
 python NCBI_Taxon_Genome_link.py -e researcher@fake_email.com -i 9606
 ```
 
 With common name.
 ```bash=
-python NCBI_Taxon_Genome_link.py -e researcher@fake_email.com -i humans
+python NCBI_Taxon_Genome_link.py -e researcher@fake_email.com -i human
 ```
 
 
@@ -110,9 +110,15 @@ an example output for Homo sapiens without outputfile.
 ```bash=
 python NCBI_Taxon_Genome_link.py -e researcher@fake_email.com -i Homo sapiens
 #Homo sapiens is of rank species
-#found 2 children taxon
-#Homo sapiens subsp. 'Denisova' is of rank subspecies
-#Homo sapiens neanderthalensis is of rank subspecies
 #found 0 children taxon
 #number of assembled genomes for Homo sapiens is 1220
 ```
+
+an example output for Homo sapiens with outputfile.
+```bash=
+python NCBI_Taxon_Genome_link.py -e researcher@fake_email.com -i Homo sapiens -o example_outputfile.txt
+#Homo sapiens is of rank species
+#found 0 children taxon
+#number of assembled genomes for Homo sapiens is 1220
+```
+refer to example_outputfile.txt in folder for format.
