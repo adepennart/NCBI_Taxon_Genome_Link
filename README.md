@@ -1,22 +1,20 @@
 # Installation
-The program can be directly installed from github. (green code button top right)
+This program can be directly installed from github. (green code button, top right)
 
 ## environment
-Due to the versions of python and the dependencies creating a conda enviroment will be most useful.
+Due to the software versions of python and the application's dependencies, creating a conda enviroment will be most useful.
 
 If you have conda skip, otherwise refer to online resources on how to install conda.
 
-Once installed, we can make a conda environment (make sure its configured)
+Once installed, we can make a conda environment
 
 ```bash=
 conda create -n population_genetics
 conda activate population_genetics
 ```
-make a directory 
-
+change directories into created NCBI_Taxon_Genome_Link-master directory 
 ```bash=
-mkdir Population_genetics
-cd Population_genetics/
+cd NCBI_Taxon_Genome_Link-master
 ```
 ## Python version
 
