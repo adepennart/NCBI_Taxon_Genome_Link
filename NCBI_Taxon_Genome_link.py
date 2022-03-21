@@ -72,7 +72,7 @@ req_arg= parser.add_argument_group(title="required arguments")
 #creates the argument for program version
 parser.add_argument('-v', '--version',
                     action='version',
-                    version='%(prog)s 2.0')
+                    version='%(prog)s 2.1')
 #creates the argument to include or not taxonomic ranks below species
 parser.add_argument('-s', '--sub_species',
                     action='store_true',
